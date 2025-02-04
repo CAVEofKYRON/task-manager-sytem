@@ -35,9 +35,9 @@ function NewProject({ onAdd, onCancel }) {
   return (
     <>
     <Modal ref={modal} buttonCaption="Okay">
-        <h2 className='text-xl font-bold text-stone-700 my-4'>Invalid Input</h2>
-        <p className='text-stone-600 mb-4'>Ooops...</p>
-        <p className='text-stone-600 mb-4'>Please make sure you provide a valid value for every input field.</p>
+        <h2 className='text-xl font-bold text-stone-700 my-4'>Ungültige Eingabe</h2>
+        <p className='text-stone-600 mb-4'>Uuuups...</p>
+        <p className='text-stone-600 mb-4'>Bitte stellen Sie sicher, dass Sie für jedes Eingabefeld einen gültigen Wert angeben.</p>
     </Modal>
       <div className="w-[35rem] mt-16 mr-4">
         <menu className="flex items-center justify-end gap-4 my-4">
