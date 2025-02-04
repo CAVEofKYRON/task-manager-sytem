@@ -56,9 +56,9 @@ function NewProject({ onAdd, onCancel }) {
           </li>
         </menu>
         <div>
-          <Input type="text" inputRef={title} label="Title" />
-          <Input inputRef={description} label="Description" textarea />
-          <Input type="date" inputRef={dueDate} label="Due Date" />
+          <Input type="text" inputRef={title} label="Titel" />
+          <Input inputRef={description} label="Beschreibung" textarea />
+          <Input type="date" inputRef={dueDate} label="Fälligkeit" />
         </div>
       </div>
     </>
