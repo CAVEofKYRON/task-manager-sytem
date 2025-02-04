@@ -12,7 +12,7 @@ function SelectedProject({project, tasks, onDelete, onAddTask, onDeleteTask}) {
 
  
 
-    <div className="w-[15rem] mt-16 mr-4">
+    <div className="w-[30rem] mt-16 mr-4">
       <header className="pb-4 mb-4 border-b-2 border-stone-300">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-stone-600 mb-2">{project.title}</h1>

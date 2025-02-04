@@ -5,7 +5,7 @@ import NoProjectSelected from "./components/NoProjectSelected";
 import SelectedProject from "./components/SelectedProject";
 
 function App() {
-  // Lade den initialen State aus dem localStorage, falls vorhanden
+  // Initialisierung des States aus localStorage (falls vorhanden)
   const [projectState, setProjectState] = useState(() => {
     const storedState = localStorage.getItem("projectState");
     return storedState
@@ -17,7 +17,7 @@ function App() {
         };
   });
 
-  // Persistiere den State in den localStorage, sobald er sich ändert
+  // Persistierung des States im localStorage bei jeder Änderung
   useEffect(() => {
     localStorage.setItem("projectState", JSON.stringify(projectState));
   }, [projectState]);
@@ -91,18 +91,24 @@ function App() {
     }));
   }
 
-  console.log(projectState);
-
+  // Bestimme das aktuell ausgewählte Projekt
   const selectedProject = projectState.projects.find(
     (project) => project.id === projectState.selectedProjectId
   );
+
+  // Filtere die Tasks, die zum aktuell ausgewählten Projekt gehören
+  const tasksForSelectedProject = projectState.tasks.filter(
+    (task) => task.projectId === projectState.selectedProjectId
+  );
+
+  // Je nach ausgewähltem Zustand wird der passende Content gerendert
   let content = (
     <SelectedProject
       project={selectedProject}
       onDelete={handleDeleteProject}
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
-      tasks={projectState.tasks}
+      tasks={tasksForSelectedProject}
     />
   );
 
