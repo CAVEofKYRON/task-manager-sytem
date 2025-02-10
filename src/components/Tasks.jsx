@@ -1,6 +1,16 @@
+import { useState, useRef } from "react";
 import NewTask from "./NewTask";
+import ConfirmationModal from "./ConfirmationModal";
 
 function Tasks({ tasks, onAdd, onDelete }) {
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const confirmModalRef = useRef();
+
+  const handleDeleteClick = (task) => {
+    setTaskToDelete(task);
+    confirmModalRef.current.open();
+  };
+
   return (
     <section>
       <h2 className="text-2xl font-bold text-stone-700 mb-4 dark:text-stone-300">
@@ -21,7 +31,7 @@ function Tasks({ tasks, onAdd, onDelete }) {
                 <span className="dark:text-stone-200">{task.text}</span>
                 <button
                   className="px-2 py-1 bg-stone-500 rounded-md text-stone-100 hover:bg-red-500 dark:bg-stone-400 dark:text-stone-900 dark:hover:bg-red-600"
-                  onClick={() => onDelete(task.id)}
+                  onClick={() => handleDeleteClick(task)}
                 >
                   Entfernen
                 </button>
@@ -30,6 +40,26 @@ function Tasks({ tasks, onAdd, onDelete }) {
           })}
         </ul>
       )}
+      <ConfirmationModal
+        ref={confirmModalRef}
+        title="Aufgabe löschen"
+        message={
+          taskToDelete
+            ? `Möchtest du die Aufgabe "${taskToDelete.text}" wirklich löschen?`
+            : "Möchtest du diese Aufgabe wirklich löschen?"
+        }
+        confirmText="Löschen"
+        cancelText="Abbrechen"
+        onConfirm={() => {
+          if (taskToDelete) {
+            onDelete(taskToDelete.id);
+            setTaskToDelete(null);
+          }
+        }}
+        onCancel={() => {
+          setTaskToDelete(null);
+        }}
+      />
     </section>
   );
 }

@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Tasks from "./Tasks";
+import ConfirmationModal from "./ConfirmationModal";
 
 function SelectedProject({
   project,
@@ -9,6 +10,7 @@ function SelectedProject({
   onDeleteTask,
 }) {
   const [showTasks, setShowTasks] = useState(false);
+  const confirmModalRef = useRef();
 
   const formattedDate = new Date(project.dueDate).toLocaleDateString("de-DE", {
     year: "numeric",
@@ -25,7 +27,9 @@ function SelectedProject({
           </h1>
           <button
             className="text-stone-600 hover:text-stone-950 dark:text-stone-300 dark:hover:text-stone-50"
-            onClick={onDelete}
+            onClick={() => {
+              confirmModalRef.current.open();
+            }}
           >
             LÖSCHEN
           </button>
@@ -52,6 +56,17 @@ function SelectedProject({
       >
         <Tasks onAdd={onAddTask} onDelete={onDeleteTask} tasks={tasks} />
       </div>
+      <ConfirmationModal
+        ref={confirmModalRef}
+        title="Projekt löschen"
+        message={`Möchtest du das Projekt "${project.title}" wirklich löschen?`}
+        confirmText="Löschen"
+        cancelText="Abbrechen"
+        onConfirm={() => {
+          onDelete();
+        }}
+        onCancel={() => {}}
+      />
     </div>
   );
 }
