@@ -3,7 +3,7 @@ import noProjectImage from "../assets/no-projects.png";
 
 function NoProjectSelected({ onStartAddProject }) {
   return (
-    <div className="mt-24 text-center w-full md:w-2/3">
+    <div className="mt-12 text-center w-full md:w-2/3">
       <img
         src={noProjectImage}
         alt="An empty task list"

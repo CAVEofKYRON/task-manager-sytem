@@ -13,32 +13,32 @@ function NewProject({ onAdd, onCancel }) {
 
   // Definition der vier Optionen mit passender Beschriftung
   const urgencyOptions = [
-    { value: 1, label: "dringend und wichtig" },
-    { value: 2, label: "dringend und nicht wichtig" },
-    { value: 3, label: "nicht dringend und wichtig" },
-    { value: 4, label: "nicht dringend und nicht wichtig" },
+    { value: 1, label: "dringend & wichtig" },
+    { value: 2, label: "dringend & nicht wichtig" },
+    { value: 3, label: "nicht dringend & wichtig" },
+    { value: 4, label: "weder dringend noch wichtig" },
   ];
 
   // Mapping der Dringlichkeitsfarben
   const urgencyStyles = {
     1: {
       dot: "bg-red-500",
-      active: "bg-red-700 text-white rounded-md shadow-md",
+      active: "bg-red-500 text-white rounded-md shadow-md",
       inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
     },
     2: {
       dot: "bg-orange-500",
-      active: "bg-orange-700 text-white rounded-md shadow-md",
+      active: "bg-orange-500 text-white rounded-md shadow-md",
       inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
     },
     3: {
-      dot: "bg-blue-500",
-      active: "bg-blue-700 text-white rounded-md shadow-md",
+      dot: "bg-green-600",
+      active: "bg-green-600 text-white rounded-md shadow-md",
       inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
     },
     4: {
-      dot: "bg-green-500",
-      active: "bg-green-700 text-white rounded-md shadow-md",
+      dot: "bg-gray-400",
+      active: "bg-gray-400 text-white rounded-md shadow-md",
       inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
     },
   };

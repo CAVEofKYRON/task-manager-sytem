@@ -115,6 +115,16 @@ function App() {
     }));
   }
 
+  // NEUE Funktion: Aktualisierung der Priorität eines Projekts
+  function handleChangeProjectPriority(projectId, newUrgency) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      projects: prevState.projects.map((project) =>
+        project.id === projectId ? { ...project, urgency: newUrgency } : project
+      ),
+    }));
+  }
+
   // Callback für den Fall, dass der Nutzer den Kalendereintrag importieren möchte
   function handleCalendarConfirm(project) {
     importToCalendar(project);
@@ -169,6 +179,8 @@ function App() {
         selectedProjectId={projectState.selectedProjectId}
         darkMode={darkMode}
         toggleDarkMode={toggleDarkMode}
+        hideOnMobile={projectState.selectedProjectId === null}
+        onChangeProjectPriority={handleChangeProjectPriority}
       />
       {content}
       {calendarProject && (
