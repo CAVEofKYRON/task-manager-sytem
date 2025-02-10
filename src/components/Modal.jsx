@@ -3,21 +3,25 @@ import { createPortal } from "react-dom";
 import Button from "./Button";
 
 function Modal({ children, buttonCaption, ref }) {
-    const dialog = useRef()
+  const dialog = useRef();
 
-  useImperativeHandle(ref, ()=>{
+  useImperativeHandle(ref, () => {
     return {
-        open() {
-            dialog.current.showModal()
-        }
-    }
-  })
+      open() {
+        dialog.current.showModal();
+      },
+    };
+  });
 
   return createPortal(
-    <dialog ref={dialog} className="backdrop:bg-stone-900/90 p-4 rounded-md shadow-md">{children}
-        <form method="dialog" className="mt-4 text-right">
-            <Button>{buttonCaption}</Button>
-        </form>
+    <dialog
+      ref={dialog}
+      className="backdrop:bg-stone-900/90 p-4 rounded-md shadow-md bg-stone-50 dark:bg-stone-800"
+    >
+      {children}
+      <form method="dialog" className="mt-4 text-right">
+        <Button>{buttonCaption}</Button>
+      </form>
     </dialog>,
     document.getElementById("modal-root")
   );

@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import ProjectsSideBar from "./components/ProjectsSidebar";
 import NewProject from "./components/NewProject";
 import NoProjectSelected from "./components/NoProjectSelected";
 import SelectedProject from "./components/SelectedProject";
+import CalendarImportModal from "./components/CalendarImportModal";
+import { importToCalendar } from "./utils/calendarUtils";
 
 function App() {
-  // Initialisierung des States aus localStorage (falls vorhanden)
+  // Initialisierung des projectState aus localStorage (falls vorhanden)
   const [projectState, setProjectState] = useState(() => {
     const storedState = localStorage.getItem("projectState");
     return storedState
@@ -17,10 +19,29 @@ function App() {
         };
   });
 
-  // Persistierung des States im localStorage bei jeder Änderung
+  // Dark Mode State (wird im localStorage persistiert)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    return saved === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", darkMode);
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  // Persistierung des projectState im localStorage bei jeder Änderung
   useEffect(() => {
     localStorage.setItem("projectState", JSON.stringify(projectState));
   }, [projectState]);
+
+  // State für das zuletzt erstellte Projekt, das evtl. in den Kalender importiert werden soll
+  const [calendarProject, setCalendarProject] = useState(null);
+  const calendarModalRef = useRef();
 
   function handleAddTask(text) {
     setProjectState((prevState) => {
@@ -67,18 +88,21 @@ function App() {
   }
 
   function handleAddProject(projectData) {
-    setProjectState((prevState) => {
-      const newProject = {
-        ...projectData,
-        id: Math.random(),
-      };
+    const newProject = {
+      ...projectData,
+      id: Math.random(),
+    };
 
-      return {
-        ...prevState,
-        selectedProjectId: undefined,
-        projects: [...prevState.projects, newProject],
-      };
-    });
+    setProjectState((prevState) => ({
+      ...prevState,
+      selectedProjectId: undefined,
+      projects: [...prevState.projects, newProject],
+    }));
+    // Neues Projekt für den Kalendereintrag speichern und Modal öffnen
+    setCalendarProject(newProject);
+    setTimeout(() => {
+      calendarModalRef.current.open();
+    }, 0);
   }
 
   function handleDeleteProject() {
@@ -89,6 +113,22 @@ function App() {
         (project) => project.id !== prevState.selectedProjectId
       ),
     }));
+  }
+
+  // Callback für den Fall, dass der Nutzer den Kalendereintrag importieren möchte
+  function handleCalendarConfirm(project) {
+    importToCalendar(project);
+    setCalendarProject(null);
+  }
+
+  // Callback, wenn der Nutzer den Import abbricht
+  function handleCalendarCancel() {
+    setCalendarProject(null);
+  }
+
+  // Toggle-Funktion für den Dark Mode
+  function toggleDarkMode() {
+    setDarkMode((prev) => !prev);
   }
 
   // Bestimme das aktuell ausgewählte Projekt
@@ -121,14 +161,24 @@ function App() {
   }
 
   return (
-    <main className="h-screen my-8 flex gap-8">
+    <main className="h-screen my-8 flex flex-col md:flex-row gap-4 md:gap-8 px-4 md:px-8">
       <ProjectsSideBar
         onStartAddProject={handleStartAddProject}
         onSelectProject={handleSelectProject}
         projects={projectState.projects}
         selectedProjectId={projectState.selectedProjectId}
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
       />
       {content}
+      {calendarProject && (
+        <CalendarImportModal
+          ref={calendarModalRef}
+          project={calendarProject}
+          onConfirm={handleCalendarConfirm}
+          onCancel={handleCalendarCancel}
+        />
+      )}
     </main>
   );
 }
