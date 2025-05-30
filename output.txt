@@ -1,0 +1,969 @@
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\postcss.config.js 
+===================================== 
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\tailwind.config.js 
+===================================== 
+/** @type {import('tailwindcss').Config} */
+export default {
+  darkMode: "class",
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\vite.config.js 
+===================================== 
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { VitePWA } from "vite-plugin-pwa";
+
+export default defineConfig({
+  base: "/tasks/",
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: [
+        "favicon.svg",
+        "favicon.ico",
+        "robots.txt",
+        "apple-touch-icon.png",
+      ],
+      manifest: {
+        name: "Task Manager",
+        short_name: "TaskManager",
+        description: "A simple task manager app",
+        theme_color: "#1c1917",
+        background_color: "#f5f5f4",
+        display: "standalone",
+        start_url: "/tasks/",
+        icons: [
+          {
+            src: "logo192.png",
+            sizes: "192x192",
+            type: "image/png",
+          },
+          {
+            src: "logo512.png",
+            sizes: "512x512",
+            type: "image/png",
+          },
+        ],
+      },
+    }),
+  ],
+});
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\index.html 
+===================================== 
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projektmanager</title>
+  </head>
+  <body class="bg-stone-50 dark:bg-stone-900">
+    <div id="modal-root"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\index.css 
+===================================== 
+@tailwind base;
+@tailwind components;
+@tailwind utilities; 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\App.jsx 
+===================================== 
+import { useState, useEffect, useRef } from "react";
+import ProjectsSideBar from "./components/ProjectsSidebar";
+import NewProject from "./components/NewProject";
+import NoProjectSelected from "./components/NoProjectSelected";
+import SelectedProject from "./components/SelectedProject";
+import CalendarImportModal from "./components/CalendarImportModal";
+import { importToCalendar } from "./utils/calendarUtils";
+
+function App() {
+  // Initialisierung des projectState aus localStorage (falls vorhanden)
+  const [projectState, setProjectState] = useState(() => {
+    const storedState = localStorage.getItem("projectState");
+    return storedState
+      ? JSON.parse(storedState)
+      : {
+          selectedProjectId: undefined,
+          projects: [],
+          tasks: [],
+        };
+  });
+
+  // Dark Mode State (wird im localStorage persistiert)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem("darkMode");
+    return saved === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", darkMode);
+    if (darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [darkMode]);
+
+  // Persistierung des projectState im localStorage bei jeder Änderung
+  useEffect(() => {
+    localStorage.setItem("projectState", JSON.stringify(projectState));
+  }, [projectState]);
+
+  // State für das zuletzt erstellte Projekt, das evtl. in den Kalender importiert werden soll
+  const [calendarProject, setCalendarProject] = useState(null);
+  const calendarModalRef = useRef();
+
+  function handleAddTask(text) {
+    setProjectState((prevState) => {
+      const taskId = Math.random();
+      const newTask = {
+        text: text,
+        projectId: prevState.selectedProjectId,
+        id: taskId,
+      };
+
+      return {
+        ...prevState,
+        tasks: [...prevState.tasks, newTask],
+      };
+    });
+  }
+
+  function handleDeleteTask(id) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      tasks: prevState.tasks.filter((task) => task.id !== id),
+    }));
+  }
+
+  function handleSelectProject(id) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      selectedProjectId: id,
+    }));
+  }
+
+  function handleStartAddProject() {
+    setProjectState((prevState) => ({
+      ...prevState,
+      selectedProjectId: null,
+    }));
+  }
+
+  function handleCancelAddProject() {
+    setProjectState((prevState) => ({
+      ...prevState,
+      selectedProjectId: undefined,
+    }));
+  }
+
+  function handleAddProject(projectData) {
+    const newProject = {
+      ...projectData,
+      id: Math.random(),
+    };
+
+    setProjectState((prevState) => ({
+      ...prevState,
+      selectedProjectId: undefined,
+      projects: [...prevState.projects, newProject],
+    }));
+    // Neues Projekt für den Kalendereintrag speichern und Modal öffnen
+    setCalendarProject(newProject);
+    setTimeout(() => {
+      calendarModalRef.current.open();
+    }, 0);
+  }
+
+  function handleDeleteProject() {
+    setProjectState((prevState) => ({
+      ...prevState,
+      selectedProjectId: undefined,
+      projects: prevState.projects.filter(
+        (project) => project.id !== prevState.selectedProjectId
+      ),
+    }));
+  }
+
+  // Callback für den Fall, dass der Nutzer den Kalendereintrag importieren möchte
+  function handleCalendarConfirm(project) {
+    importToCalendar(project);
+    setCalendarProject(null);
+  }
+
+  // Callback, wenn der Nutzer den Import abbricht
+  function handleCalendarCancel() {
+    setCalendarProject(null);
+  }
+
+  // Toggle-Funktion für den Dark Mode
+  function toggleDarkMode() {
+    setDarkMode((prev) => !prev);
+  }
+
+  // Bestimme das aktuell ausgewählte Projekt
+  const selectedProject = projectState.projects.find(
+    (project) => project.id === projectState.selectedProjectId
+  );
+
+  // Filtere die Tasks, die zum aktuell ausgewählten Projekt gehören
+  const tasksForSelectedProject = projectState.tasks.filter(
+    (task) => task.projectId === projectState.selectedProjectId
+  );
+
+  // Je nach ausgewähltem Zustand wird der passende Content gerendert
+  let content = (
+    <SelectedProject
+      project={selectedProject}
+      onDelete={handleDeleteProject}
+      onAddTask={handleAddTask}
+      onDeleteTask={handleDeleteTask}
+      tasks={tasksForSelectedProject}
+    />
+  );
+
+  if (projectState.selectedProjectId === null) {
+    content = (
+      <NewProject onAdd={handleAddProject} onCancel={handleCancelAddProject} />
+    );
+  } else if (projectState.selectedProjectId === undefined) {
+    content = <NoProjectSelected onStartAddProject={handleStartAddProject} />;
+  }
+
+  return (
+    <main className="h-screen my-8 flex flex-col md:flex-row gap-4 md:gap-8 px-4 md:px-8">
+      <ProjectsSideBar
+        onStartAddProject={handleStartAddProject}
+        onSelectProject={handleSelectProject}
+        projects={projectState.projects}
+        selectedProjectId={projectState.selectedProjectId}
+        darkMode={darkMode}
+        toggleDarkMode={toggleDarkMode}
+        hideOnMobile={projectState.selectedProjectId === null}
+      />
+      {content}
+      {calendarProject && (
+        <CalendarImportModal
+          ref={calendarModalRef}
+          project={calendarProject}
+          onConfirm={handleCalendarConfirm}
+          onCancel={handleCalendarCancel}
+        />
+      )}
+    </main>
+  );
+}
+
+export default App;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\main.jsx 
+===================================== 
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  
+    <App />
+  ,
+)
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\Button.jsx 
+===================================== 
+function Button({ children, ...props }) {
+  return (
+    <button
+      className="px-6 py-3 text-sm md:text-lg rounded-md bg-stone-700 text-stone-400 hover:bg-stone-600 hover:text-stone-100 dark:bg-stone-300 dark:text-stone-700 dark:hover:bg-stone-400 dark:hover:text-stone-950 transition-colors duration-200"
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default Button;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\CalendarImportModal.jsx 
+===================================== 
+import { forwardRef, useImperativeHandle, useRef } from "react";
+import { createPortal } from "react-dom";
+import Button from "./Button";
+
+const CalendarImportModal = forwardRef(
+  ({ project, onConfirm, onCancel }, ref) => {
+    const dialogRef = useRef();
+
+    useImperativeHandle(ref, () => ({
+      open() {
+        dialogRef.current.showModal();
+      },
+      close() {
+        dialogRef.current.close();
+      },
+    }));
+
+    return createPortal(
+      <dialog
+        ref={dialogRef}
+        className="backdrop:bg-stone-900/90 p-4 rounded-md shadow-md bg-stone-50 dark:bg-stone-800"
+      >
+        <h2 className="text-xl font-bold text-stone-700 my-4 dark:text-stone-200">
+          Kalendereintrag hinzufügen?
+        </h2>
+        <p className="text-stone-600 mb-4 dark:text-stone-300">
+          Möchtest du das Projekt <strong>{project.title}</strong> in deinen
+          Kalender importieren?
+        </p>
+        <div className="flex justify-end gap-4">
+          <Button
+            onClick={() => {
+              onCancel();
+              dialogRef.current.close();
+            }}
+          >
+            Abbrechen
+          </Button>
+          <Button
+            onClick={() => {
+              onConfirm(project);
+              dialogRef.current.close();
+            }}
+          >
+            Importieren
+          </Button>
+        </div>
+      </dialog>,
+      document.getElementById("modal-root")
+    );
+  }
+);
+
+export default CalendarImportModal;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\ConfirmationModal.jsx 
+===================================== 
+import { forwardRef, useImperativeHandle, useRef } from "react";
+import { createPortal } from "react-dom";
+import Button from "./Button";
+
+const ConfirmationModal = forwardRef(
+  ({ title, message, confirmText, cancelText, onConfirm, onCancel }, ref) => {
+    const dialogRef = useRef();
+
+    useImperativeHandle(ref, () => ({
+      open() {
+        dialogRef.current.showModal();
+      },
+      close() {
+        dialogRef.current.close();
+      },
+    }));
+
+    return createPortal(
+      <dialog
+        ref={dialogRef}
+        className="backdrop:bg-stone-900/90 p-4 rounded-md shadow-md bg-stone-50 dark:bg-stone-800"
+      >
+        <h2 className="text-xl font-bold text-stone-700 my-4 dark:text-stone-200">
+          {title}
+        </h2>
+        <p className="text-stone-600 mb-4 dark:text-stone-300">{message}</p>
+        <div className="flex justify-end gap-4">
+          <Button
+            onClick={() => {
+              onCancel && onCancel();
+              dialogRef.current.close();
+            }}
+          >
+            {cancelText || "Abbrechen"}
+          </Button>
+          <Button
+            onClick={() => {
+              onConfirm && onConfirm();
+              dialogRef.current.close();
+            }}
+          >
+            {confirmText || "Bestätigen"}
+          </Button>
+        </div>
+      </dialog>,
+      document.getElementById("modal-root")
+    );
+  }
+);
+
+export default ConfirmationModal;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\Input.jsx 
+===================================== 
+function Input({ label, textarea, inputRef, ...props }) {
+  const classes =
+    "w-full p-2 border border-stone-300 rounded-md bg-stone-200 text-stone-600 focus:outline-none focus:border-stone-600 dark:border-stone-600 dark:bg-stone-800 dark:text-stone-100 dark:focus:border-stone-400";
+
+  return (
+    <p className="flex flex-col gap-1 my-4">
+      <label className="text-sm font-bold uppercase text-stone-500 dark:text-stone-300">
+        {label}
+      </label>
+      {textarea ? (
+        <textarea ref={inputRef} className={classes} {...props} />
+      ) : (
+        <input ref={inputRef} className={classes} {...props} />
+      )}
+    </p>
+  );
+}
+
+export default Input;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\Modal.jsx 
+===================================== 
+import { useImperativeHandle, useRef } from "react";
+import { createPortal } from "react-dom";
+import Button from "./Button";
+
+function Modal({ children, buttonCaption, ref }) {
+  const dialog = useRef();
+
+  useImperativeHandle(ref, () => {
+    return {
+      open() {
+        dialog.current.showModal();
+      },
+    };
+  });
+
+  return createPortal(
+    <dialog
+      ref={dialog}
+      className="backdrop:bg-stone-900/90 p-4 rounded-md shadow-md bg-stone-50 dark:bg-stone-800"
+    >
+      {children}
+      <form method="dialog" className="mt-4 text-right">
+        <Button>{buttonCaption}</Button>
+      </form>
+    </dialog>,
+    document.getElementById("modal-root")
+  );
+}
+export default Modal;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\NewProject.jsx 
+===================================== 
+import { useRef, useState } from "react";
+import Input from "./Input";
+import Modal from "./Modal";
+
+function NewProject({ onAdd, onCancel }) {
+  const modal = useRef();
+  const title = useRef();
+  const description = useRef();
+  const dueDate = useRef();
+
+  // State für die Dringlichkeitsstufe (initial keine Auswahl)
+  const [selectedUrgency, setSelectedUrgency] = useState(null);
+
+  // Definition der vier Optionen mit passender Beschriftung
+  const urgencyOptions = [
+    { value: 1, label: "dringend & wichtig" },
+    { value: 2, label: "dringend & nicht wichtig" },
+    { value: 3, label: "nicht dringend & wichtig" },
+    { value: 4, label: "weder dringend noch wichtig" },
+  ];
+
+  // Mapping der Dringlichkeitsfarben
+  const urgencyStyles = {
+    1: {
+      dot: "bg-red-500",
+      active: "bg-red-500 text-white rounded-md shadow-md",
+      inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
+    },
+    2: {
+      dot: "bg-orange-500",
+      active: "bg-orange-500 text-white rounded-md shadow-md",
+      inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
+    },
+    3: {
+      dot: "bg-green-600",
+      active: "bg-green-600 text-white rounded-md shadow-md",
+      inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
+    },
+    4: {
+      dot: "bg-gray-400",
+      active: "bg-gray-400 text-white rounded-md shadow-md",
+      inactive: "bg-stone-200 text-stone-700 rounded-md shadow-sm",
+    },
+  };
+
+  function handleSave() {
+    const enteredTitle = title.current.value;
+    const enteredDescription = description.current.value;
+    const enteredDueDate = dueDate.current.value;
+
+    // Validation: Alle Felder müssen ausgefüllt sein und eine Dringlichkeitsstufe ausgewählt sein
+    if (
+      enteredTitle.trim() === "" ||
+      enteredDescription.trim() === "" ||
+      enteredDueDate.trim() === "" ||
+      selectedUrgency === null
+    ) {
+      modal.current.open();
+      return;
+    }
+
+    onAdd({
+      title: enteredTitle,
+      description: enteredDescription,
+      dueDate: enteredDueDate,
+      urgency: selectedUrgency,
+    });
+  }
+
+  return (
+    <>
+      <Modal ref={modal} buttonCaption="Okay">
+        <h2 className="text-xl font-bold text-stone-700 my-4 dark:text-stone-200">
+          Ungültige Eingabe
+        </h2>
+        <p className="text-stone-600 mb-4 dark:text-stone-300">Uuuups...</p>
+        <p className="text-stone-600 mb-4 dark:text-stone-300">
+          Bitte stellen Sie sicher, dass Sie für jedes Eingabefeld einen
+          gültigen Wert angeben.
+          {selectedUrgency === null &&
+            " (Bitte wählen Sie eine Dringlichkeitsstufe aus)"}
+        </p>
+      </Modal>
+      <div className="w-full mt-8 md:mt-16 mr-0 md:mr-4">
+        <menu className="flex items-center justify-end gap-4 my-4">
+          <li>
+            <button
+              className="text-stone-800 hover:text-stone-950 dark:text-stone-200 dark:hover:text-stone-50"
+              onClick={onCancel}
+            >
+              Abbrechen
+            </button>
+          </li>
+          <li>
+            <button
+              className="px-6 py-3 rounded-md bg-stone-950 text-stone-50 hover:bg-stone-700 dark:bg-stone-300 dark:text-stone-900 dark:hover:bg-stone-400 transition-colors duration-200"
+              onClick={handleSave}
+            >
+              Speichern
+            </button>
+          </li>
+        </menu>
+        <div>
+          <Input type="text" inputRef={title} label="Titel" />
+          <Input inputRef={description} label="Beschreibung" textarea />
+          <Input type="date" inputRef={dueDate} label="Fälligkeit" />
+
+          {/* Button-Gruppe zur Auswahl der Dringlichkeit */}
+          <div className="flex flex-col gap-2 my-4">
+            <label className="text-sm font-bold uppercase text-stone-500 dark:text-stone-300">
+              Dringlichkeit
+            </label>
+            {urgencyOptions.map((option) => {
+              const isSelected = selectedUrgency === option.value;
+              const dotColor = urgencyStyles[option.value].dot;
+              const buttonClasses = isSelected
+                ? urgencyStyles[option.value].active
+                : urgencyStyles[option.value].inactive;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => setSelectedUrgency(option.value)}
+                  className={`w-full text-left px-4 py-2 flex items-center transition-colors duration-200 text-lg ${buttonClasses}`}
+                >
+                  <span
+                    className={`inline-block w-4 h-4 rounded-full mr-3 ${dotColor}`}
+                  />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default NewProject;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\NewTask.jsx 
+===================================== 
+import { useState } from "react";
+
+function NewTask({ onAdd }) {
+  const [enteredTask, setEnteredTask] = useState("");
+
+  function handleChange(event) {
+    setEnteredTask(event.target.value);
+  }
+
+  function handleClick() {
+    if (enteredTask.trim() !== "") {
+      onAdd(enteredTask);
+      setEnteredTask("");
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      <input
+        type="text"
+        className="w-64 px-2 py-1 rounded-sm bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-100"
+        onChange={handleChange}
+        value={enteredTask}
+      />
+      <button
+        className="py-1 px-2 md:px-3 text-xs md:text-sm rounded-md bg-stone-500 text-stone-100 hover:bg-stone-600 dark:bg-stone-400 dark:text-stone-900 dark:hover:bg-stone-500 transition-colors duration-200"
+        onClick={handleClick}
+      >
+        Aufgabe hinzufügen
+      </button>
+    </div>
+  );
+}
+
+export default NewTask;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\NoProjectSelected.jsx 
+===================================== 
+import Button from "./Button";
+import noProjectImage from "../assets/no-projects.png";
+
+function NoProjectSelected({ onStartAddProject }) {
+  return (
+    <div className="mt-12 text-center w-full md:w-2/3">
+      <img
+        src={noProjectImage}
+        alt="An empty task list"
+        className="w-16 h-16 object-contain mx-auto"
+      />
+      <h2 className="text-xl font-bold text-stone-500 my-4 dark:text-stone-200">
+        Kein Projekt gewählt
+      </h2>
+      <p className="text-stone-400 mb-4 dark:text-stone-300">
+        Wählen Sie ein Projekt aus oder beginnen Sie mit einem neuen Projekt.
+      </p>
+      <p className="mt-8">
+        <Button onClick={onStartAddProject}>Neues Projekt erstellen</Button>
+      </p>
+    </div>
+  );
+}
+
+export default NoProjectSelected;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\ProjectsSidebar.jsx 
+===================================== 
+import Button from "./Button.jsx";
+
+function ProjectsSideBar({
+  onStartAddProject,
+  projects,
+  onSelectProject,
+  selectedProjectId,
+  darkMode,
+  toggleDarkMode,
+  hideOnMobile, // Neuer Prop zur Steuerung der Sichtbarkeit in der Smartphone-Ansicht
+}) {
+  // Mapping der Dringlichkeitsstufen zu Farbstilen (Tailwind-Klassen)
+  const urgencyStyles = {
+    1: { normal: "bg-red-500 text-white", selected: "bg-red-700 text-white" },
+    2: {
+      normal: "bg-orange-500 text-white",
+      selected: "bg-orange-700 text-white",
+    },
+    3: {
+      normal: "bg-green-600 text-white",
+      selected: "bg-green-700 text-white",
+    },
+    4: {
+      normal: "bg-gray-400 text-white",
+      selected: "bg-gray-500 text-white",
+    },
+  };
+
+  // Sortiere die Projekte anhand der Dringlichkeit (niedriger Wert = höhere Priorität)
+  const sortedProjects = [...projects].sort(
+    (p1, p2) => p1.urgency - p2.urgency
+  );
+
+  // Klassen-Zusammenstellung: Wenn hideOnMobile true ist, wird die Sidebar in kleinen Bildschirmen ausgeblendet (hidden) und ab md angezeigt (md:block)
+  const baseClasses =
+    "px-8 py-16 bg-stone-200 text-stone-900 rounded-xl dark:bg-stone-900 dark:text-stone-50";
+  const widthClasses = "w-full md:w-72";
+  const responsiveClasses = hideOnMobile ? "hidden md:block" : "block";
+  const asideClassName = `${widthClasses} ${baseClasses} ${responsiveClasses}`;
+
+  return (
+    <aside className={asideClassName}>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="font-bold uppercase md:text-xl">Projekt</h2>
+        <button onClick={toggleDarkMode} className="text-2xl">
+          {darkMode ? "☀️" : "🌙"}
+        </button>
+      </div>
+      <div>
+        <Button onClick={onStartAddProject}>+ Projekt hinzufügen</Button>
+      </div>
+      <ul className="mt-8">
+        {sortedProjects.map((project) => {
+          const isSelected = project.id === selectedProjectId;
+          const urgency = project.urgency;
+          const style = urgencyStyles[urgency] || urgencyStyles[4];
+          const cssClasses =
+            "w-full text-left px-4 py-2 rounded-md my-2 text-lg " +
+            (isSelected ? style.selected : style.normal);
+          return (
+            <li key={project.id}>
+              <button
+                onClick={() => onSelectProject(project.id)}
+                className={cssClasses}
+              >
+                {project.title}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </aside>
+  );
+}
+
+export default ProjectsSideBar;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\SelectedProject.jsx 
+===================================== 
+import { useState, useRef } from "react";
+import Tasks from "./Tasks";
+import ConfirmationModal from "./ConfirmationModal";
+
+function SelectedProject({
+  project,
+  tasks,
+  onDelete,
+  onAddTask,
+  onDeleteTask,
+}) {
+  const [showTasks, setShowTasks] = useState(false);
+  const confirmModalRef = useRef();
+
+  const formattedDate = new Date(project.dueDate).toLocaleDateString("de-DE", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+
+  return (
+    <div className="w-full mt-8 md:mt-16 mr-0 md:mr-4">
+      <header className="pb-4 mb-4 border-b-2 border-stone-300 dark:border-stone-600">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-stone-600 mb-2 dark:text-stone-300">
+            {project.title}
+          </h1>
+          <button
+            className="text-stone-600 hover:text-stone-950 dark:text-stone-300 dark:hover:text-stone-50"
+            onClick={() => {
+              confirmModalRef.current.open();
+            }}
+          >
+            LÖSCHEN
+          </button>
+        </div>
+        <p className="mb-4 text-stone-400 dark:text-stone-300">
+          {formattedDate}
+        </p>
+        <p className="text-stone-600 whitespace-pre-wrap dark:text-stone-300">
+          {project.description}
+        </p>
+        <div className="mt-4">
+          <button
+            className="text-sm font-medium text-stone-600 bg-stone-300 hover:bg-stone-400 focus:outline-none rounded-md px-3 py-1 transition-colors duration-200 dark:text-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600"
+            onClick={() => setShowTasks(!showTasks)}
+          >
+            {showTasks ? "Aufgaben ausblenden" : "Aufgaben einblenden"}
+          </button>
+        </div>
+      </header>
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showTasks ? "max-h-[1000px]" : "max-h-0"
+        }`}
+      >
+        <Tasks onAdd={onAddTask} onDelete={onDeleteTask} tasks={tasks} />
+      </div>
+      <ConfirmationModal
+        ref={confirmModalRef}
+        title="Projekt löschen"
+        message={`Möchtest du das Projekt "${project.title}" wirklich löschen?`}
+        confirmText="Löschen"
+        cancelText="Abbrechen"
+        onConfirm={() => {
+          onDelete();
+        }}
+        onCancel={() => {}}
+      />
+    </div>
+  );
+}
+
+export default SelectedProject;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\components\Tasks.jsx 
+===================================== 
+import { useState, useRef } from "react";
+import NewTask from "./NewTask";
+import ConfirmationModal from "./ConfirmationModal";
+
+function Tasks({ tasks, onAdd, onDelete }) {
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const confirmModalRef = useRef();
+
+  const handleDeleteClick = (task) => {
+    setTaskToDelete(task);
+    confirmModalRef.current.open();
+  };
+
+  return (
+    <section>
+      <h2 className="text-2xl font-bold text-stone-700 mb-4 dark:text-stone-300">
+        Aufgaben
+      </h2>
+      <NewTask onAdd={onAdd} />
+
+      {tasks.length === 0 && (
+        <p className="text-stone-800 my-4 dark:text-stone-200">
+          Dieses Projekt hat noch keine Aufgaben.
+        </p>
+      )}
+      {tasks.length > 0 && (
+        <ul className="p-4 mt-8 rounded-md bg-stone-100 dark:bg-stone-700">
+          {tasks.map((task) => {
+            return (
+              <li key={task.id} className="flex justify-between my-4">
+                <span className="dark:text-stone-200">{task.text}</span>
+                <button
+                  className="px-2 py-1 bg-stone-500 rounded-md text-stone-100 hover:bg-red-500 dark:bg-stone-400 dark:text-stone-900 dark:hover:bg-red-600"
+                  onClick={() => handleDeleteClick(task)}
+                >
+                  Entfernen
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <ConfirmationModal
+        ref={confirmModalRef}
+        title="Aufgabe löschen"
+        message={
+          taskToDelete
+            ? `Möchtest du die Aufgabe "${taskToDelete.text}" wirklich löschen?`
+            : "Möchtest du diese Aufgabe wirklich löschen?"
+        }
+        confirmText="Löschen"
+        cancelText="Abbrechen"
+        onConfirm={() => {
+          if (taskToDelete) {
+            onDelete(taskToDelete.id);
+            setTaskToDelete(null);
+          }
+        }}
+        onCancel={() => {
+          setTaskToDelete(null);
+        }}
+      />
+    </section>
+  );
+}
+
+export default Tasks;
+ 
+===================================== 
+Datei: C:\xampp\React-Projects\task-manager\src\utils\calendarUtils.js 
+===================================== 
+export function importToCalendar(project) {
+  // Annahme: project.dueDate liegt im Format "YYYY-MM-DD" vor.
+  const dtStart = project.dueDate.replace(/-/g, "");
+  const dueDateObj = new Date(project.dueDate);
+  // Für ein ganztägiges Event: DTEND ist der Folgetag
+  dueDateObj.setDate(dueDateObj.getDate() + 1);
+  const year = dueDateObj.getFullYear();
+  const month = String(dueDateObj.getMonth() + 1).padStart(2, "0");
+  const day = String(dueDateObj.getDate()).padStart(2, "0");
+  const dtEnd = `${year}${month}${day}`;
+
+  const uid = Date.now() + "@" + window.location.hostname;
+  const dtStamp =
+    new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+  const icsLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Task Manager App//EN",
+    "BEGIN:VEVENT",
+    "UID:" + uid,
+    "DTSTAMP:" + dtStamp,
+    "DTSTART;VALUE=DATE:" + dtStart,
+    "DTEND;VALUE=DATE:" + dtEnd,
+    "SUMMARY:" + project.title,
+    "DESCRIPTION:" + project.description,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT15M",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Erinnerung",
+    "END:VALARM",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ];
+
+  const icsContent = icsLines.join("\r\n");
+  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = project.title + ".ics";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+ 
