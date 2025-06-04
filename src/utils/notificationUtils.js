@@ -33,3 +33,30 @@ export function checkDueReminders(projects) {
   }
   localStorage.setItem('notifiedProjects', JSON.stringify(notified));
 }
+
+export function checkTaskDeadlines(tasks) {
+  if (!('Notification' in window)) {
+    return;
+  }
+  if (Notification.permission !== 'granted') {
+    return;
+  }
+
+  const notified = JSON.parse(localStorage.getItem('notifiedTasks') || '{}');
+  const now = new Date();
+
+  for (const task of tasks) {
+    if (notified[task.id] || !task.dueDate) {
+      continue;
+    }
+    const dueDate = new Date(task.dueDate);
+    const diff = dueDate.getTime() - now.getTime();
+    if (diff > 0 && diff <= 24 * 60 * 60 * 1000) {
+      new Notification('Aufgabe bald fällig', {
+        body: `${task.text} ist in weniger als 24 Stunden fällig.`,
+      });
+      notified[task.id] = true;
+    }
+  }
+  localStorage.setItem('notifiedTasks', JSON.stringify(notified));
+}

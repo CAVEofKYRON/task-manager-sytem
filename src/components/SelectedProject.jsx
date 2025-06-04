@@ -112,6 +112,7 @@ function SelectedProject({
           onEdit={onEditTask}
           onToggleCompletion={onToggleTaskCompletion}
           tasks={tasks}
+          projectDueDate={project.dueDate}
         />
       </div>
       <ConfirmationModal

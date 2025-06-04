@@ -8,6 +8,7 @@ import { importToCalendar } from "./utils/calendarUtils";
 import {
   requestNotificationPermission,
   checkDueReminders,
+  checkTaskDeadlines,
 } from "./utils/notificationUtils";
 
 function App() {
@@ -16,11 +17,16 @@ function App() {
     const storedState = localStorage.getItem("projectState");
     if (storedState) {
       const parsed = JSON.parse(storedState);
-      const tasksWithCompletion = (parsed.tasks || []).map((task) =>
-        Object.prototype.hasOwnProperty.call(task, "completed")
-          ? task
-          : { ...task, completed: false }
-      );
+      const tasksWithCompletion = (parsed.tasks || []).map((task) => {
+        const completed = Object.prototype.hasOwnProperty.call(task, "completed")
+          ? task.completed
+          : false;
+        const project = (parsed.projects || []).find(
+          (p) => p.id === task.projectId
+        );
+        const dueDate = task.dueDate || project?.dueDate || "";
+        return { ...task, completed, dueDate };
+      });
       return { ...parsed, tasks: tasksWithCompletion };
     }
     return {
@@ -60,18 +66,33 @@ function App() {
     return () => clearInterval(interval);
   }, [projectState.projects]);
 
+  // Erinnerungen für Aufgaben, die bald fällig sind
+  useEffect(() => {
+    requestNotificationPermission();
+    checkTaskDeadlines(projectState.tasks);
+    const interval = setInterval(() => {
+      checkTaskDeadlines(projectState.tasks);
+    }, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [projectState.tasks]);
+
   // State für das zuletzt erstellte Projekt, das evtl. in den Kalender importiert werden soll
   const [calendarProject, setCalendarProject] = useState(null);
   const calendarModalRef = useRef();
 
-  function handleAddTask(text) {
+  function handleAddTask(text, dueDate) {
     setProjectState((prevState) => {
       const taskId = Math.random();
+      const project = prevState.projects.find(
+        (p) => p.id === prevState.selectedProjectId
+      );
+      const defaultDate = project?.dueDate || "";
       const newTask = {
         text: text,
         projectId: prevState.selectedProjectId,
         id: taskId,
         completed: false,
+        dueDate: dueDate || defaultDate,
       };
 
       return {
