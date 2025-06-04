@@ -152,6 +152,9 @@ function App() {
       projects: prevState.projects.filter(
         (project) => project.id !== prevState.selectedProjectId
       ),
+      tasks: prevState.tasks.filter(
+        (task) => task.projectId !== prevState.selectedProjectId
+      ),
     }));
   }
 
