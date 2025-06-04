@@ -7,6 +7,7 @@ function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion, projectDueD
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editedText, setEditedText] = useState("");
   const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const confirmModalRef = useRef();
 
   const handleDeleteClick = (task) => {
@@ -28,9 +29,9 @@ function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion, projectDueD
   };
 
   const filteredTasks = tasks.filter((task) => {
-    if (filter === "completed") return task.completed;
-    if (filter === "active") return !task.completed;
-    return true;
+    if (filter === "completed" && !task.completed) return false;
+    if (filter === "active" && task.completed) return false;
+    return task.text.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   return (
@@ -41,6 +42,7 @@ function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion, projectDueD
       <NewTask onAdd={onAdd} projectDueDate={projectDueDate} />
 
       {tasks.length > 0 && (
+        <>
         <div className="flex gap-2 mt-4">
           <button
             className={`px-2 py-1 rounded-md ${
@@ -73,6 +75,14 @@ function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion, projectDueD
             Erledigt
           </button>
         </div>
+        <input
+          type="text"
+          placeholder="Aufgaben suchen..."
+          className="w-64 px-2 py-1 mt-4 rounded-sm bg-stone-200 text-stone-600 dark:bg-stone-700 dark:text-stone-100"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        </>
       )}
 
       {tasks.length === 0 && (
