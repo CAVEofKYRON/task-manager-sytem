@@ -54,10 +54,16 @@ function ProjectsSideBar({
     },
   };
 
-  // Sortiere die Projekte anhand der Dringlichkeit (niedriger Wert = höhere Priorität)
-  const sortedProjects = [...projects].sort(
-    (p1, p2) => p1.urgency - p2.urgency
-  );
+  // Sortierkriterium ("urgency" oder "dueDate")
+  const [sortCriteria, setSortCriteria] = useState("urgency");
+
+  // Sortiere die Projekte je nach ausgewähltem Kriterium
+  const sortedProjects = [...projects].sort((p1, p2) => {
+    if (sortCriteria === "dueDate") {
+      return new Date(p1.dueDate) - new Date(p2.dueDate);
+    }
+    return p1.urgency - p2.urgency;
+  });
 
   // State zur Steuerung, welches Dropdown gerade geöffnet ist (speichert die project.id)
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -79,6 +85,20 @@ function ProjectsSideBar({
       </div>
       <div>
         <Button onClick={onStartAddProject}>+ Projekt hinzufügen</Button>
+      </div>
+      {/* Auswahl des Sortierkriteriums */}
+      <div className="mt-4">
+        <label className="block text-sm font-bold uppercase text-stone-500 dark:text-stone-300 mb-2">
+          Sortieren nach
+        </label>
+        <select
+          value={sortCriteria}
+          onChange={(e) => setSortCriteria(e.target.value)}
+          className="w-full px-2 py-1 rounded-md bg-stone-300 dark:bg-stone-700 dark:text-stone-200"
+        >
+          <option value="urgency">Dringlichkeit</option>
+          <option value="dueDate">Fälligkeit</option>
+        </select>
       </div>
       <ul className="mt-8 space-y-2">
         {sortedProjects.map((project) => {
