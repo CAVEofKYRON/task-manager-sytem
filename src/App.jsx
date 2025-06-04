@@ -124,6 +124,15 @@ function App() {
     }));
   }
 
+  function handleRenameProject(projectId, newTitle) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      projects: prevState.projects.map((project) =>
+        project.id === projectId ? { ...project, title: newTitle } : project
+      ),
+    }));
+  }
+
   // NEUE Funktion: Aktualisierung der Priorität eines Projekts
   function handleChangeProjectPriority(projectId, newUrgency) {
     setProjectState((prevState) => ({
@@ -165,6 +174,7 @@ function App() {
     <SelectedProject
       project={selectedProject}
       onDelete={handleDeleteProject}
+      onRename={handleRenameProject}
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
       onEditTask={handleEditTask}
