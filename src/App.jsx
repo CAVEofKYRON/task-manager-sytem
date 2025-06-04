@@ -66,6 +66,15 @@ function App() {
     }));
   }
 
+  function handleEditTask(id, newText) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      tasks: prevState.tasks.map((task) =>
+        task.id === id ? { ...task, text: newText } : task
+      ),
+    }));
+  }
+
   function handleSelectProject(id) {
     setProjectState((prevState) => ({
       ...prevState,
@@ -158,6 +167,7 @@ function App() {
       onDelete={handleDeleteProject}
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
+      onEditTask={handleEditTask}
       tasks={tasksForSelectedProject}
     />
   );

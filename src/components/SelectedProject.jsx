@@ -8,6 +8,7 @@ function SelectedProject({
   onDelete,
   onAddTask,
   onDeleteTask,
+  onEditTask,
 }) {
   const [showTasks, setShowTasks] = useState(false);
   const confirmModalRef = useRef();
@@ -54,7 +55,12 @@ function SelectedProject({
           showTasks ? "max-h-[1000px]" : "max-h-0"
         }`}
       >
-        <Tasks onAdd={onAddTask} onDelete={onDeleteTask} tasks={tasks} />
+        <Tasks
+          onAdd={onAddTask}
+          onDelete={onDeleteTask}
+          onEdit={onEditTask}
+          tasks={tasks}
+        />
       </div>
       <ConfirmationModal
         ref={confirmModalRef}
