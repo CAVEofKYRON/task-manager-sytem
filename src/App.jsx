@@ -5,6 +5,10 @@ import NoProjectSelected from "./components/NoProjectSelected";
 import SelectedProject from "./components/SelectedProject";
 import CalendarImportModal from "./components/CalendarImportModal";
 import { importToCalendar } from "./utils/calendarUtils";
+import {
+  requestNotificationPermission,
+  checkDueReminders,
+} from "./utils/notificationUtils";
 
 function App() {
   // Initialisierung des projectState aus localStorage (falls vorhanden)
@@ -45,6 +49,16 @@ function App() {
   useEffect(() => {
     localStorage.setItem("projectState", JSON.stringify(projectState));
   }, [projectState]);
+
+  // Erinnerungen für Projekte, die bald fällig sind
+  useEffect(() => {
+    requestNotificationPermission();
+    checkDueReminders(projectState.projects);
+    const interval = setInterval(() => {
+      checkDueReminders(projectState.projects);
+    }, 60 * 60 * 1000); // stündliche Prüfung
+    return () => clearInterval(interval);
+  }, [projectState.projects]);
 
   // State für das zuletzt erstellte Projekt, das evtl. in den Kalender importiert werden soll
   const [calendarProject, setCalendarProject] = useState(null);
