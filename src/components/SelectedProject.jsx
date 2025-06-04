@@ -9,8 +9,11 @@ function SelectedProject({
   onAddTask,
   onDeleteTask,
   onEditTask,
+  onRename,
 }) {
   const [showTasks, setShowTasks] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleInput, setTitleInput] = useState(project.title);
   const confirmModalRef = useRef();
 
   const formattedDate = new Date(project.dueDate).toLocaleDateString("de-DE", {
@@ -23,17 +26,64 @@ function SelectedProject({
     <div className="w-full mt-8 md:mt-16 mr-0 md:mr-4">
       <header className="pb-4 mb-4 border-b-2 border-stone-300 dark:border-stone-600">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-stone-600 mb-2 dark:text-stone-300">
-            {project.title}
-          </h1>
-          <button
-            className="text-stone-600 hover:text-stone-950 dark:text-stone-300 dark:hover:text-stone-50"
-            onClick={() => {
-              confirmModalRef.current.open();
-            }}
-          >
-            LÖSCHEN
-          </button>
+          {editingTitle ? (
+            <input
+              type="text"
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              className="w-64 px-2 py-1 rounded-sm bg-stone-200 text-stone-600 dark:bg-stone-600 dark:text-stone-100"
+            />
+          ) : (
+            <h1 className="text-3xl font-bold text-stone-600 mb-2 dark:text-stone-300">
+              {project.title}
+            </h1>
+          )}
+          <div className="flex gap-2">
+            {editingTitle ? (
+              <>
+                <button
+                  className="px-2 py-1 bg-stone-500 rounded-md text-stone-100 hover:bg-stone-600 dark:bg-stone-400 dark:text-stone-900"
+                  onClick={() => {
+                    if (titleInput.trim() !== '') {
+                      onRename(project.id, titleInput);
+                      setEditingTitle(false);
+                    }
+                  }}
+                >
+                  Speichern
+                </button>
+                <button
+                  className="px-2 py-1 bg-stone-500 rounded-md text-stone-100 hover:bg-red-500 dark:bg-stone-400 dark:text-stone-900 dark:hover:bg-red-600"
+                  onClick={() => {
+                    setEditingTitle(false);
+                    setTitleInput(project.title);
+                  }}
+                >
+                  Abbrechen
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="px-2 py-1 bg-stone-500 rounded-md text-stone-100 hover:bg-stone-600 dark:bg-stone-400 dark:text-stone-900"
+                  onClick={() => {
+                    setEditingTitle(true);
+                    setTitleInput(project.title);
+                  }}
+                >
+                  Bearbeiten
+                </button>
+                <button
+                  className="text-stone-600 hover:text-stone-950 dark:text-stone-300 dark:hover:text-stone-50"
+                  onClick={() => {
+                    confirmModalRef.current.open();
+                  }}
+                >
+                  LÖSCHEN
+                </button>
+              </>
+            )}
+          </div>
         </div>
         <p className="mb-4 text-stone-400 dark:text-stone-300">
           {formattedDate}
