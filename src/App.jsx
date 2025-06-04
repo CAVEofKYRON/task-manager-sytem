@@ -5,18 +5,35 @@ import NoProjectSelected from "./components/NoProjectSelected";
 import SelectedProject from "./components/SelectedProject";
 import CalendarImportModal from "./components/CalendarImportModal";
 import { importToCalendar } from "./utils/calendarUtils";
+import {
+  requestNotificationPermission,
+  checkDueReminders,
+  checkTaskDeadlines,
+} from "./utils/notificationUtils";
 
 function App() {
   // Initialisierung des projectState aus localStorage (falls vorhanden)
   const [projectState, setProjectState] = useState(() => {
     const storedState = localStorage.getItem("projectState");
-    return storedState
-      ? JSON.parse(storedState)
-      : {
-          selectedProjectId: undefined,
-          projects: [],
-          tasks: [],
-        };
+    if (storedState) {
+      const parsed = JSON.parse(storedState);
+      const tasksWithCompletion = (parsed.tasks || []).map((task) => {
+        const completed = Object.prototype.hasOwnProperty.call(task, "completed")
+          ? task.completed
+          : false;
+        const project = (parsed.projects || []).find(
+          (p) => p.id === task.projectId
+        );
+        const dueDate = task.dueDate || project?.dueDate || "";
+        return { ...task, completed, dueDate };
+      });
+      return { ...parsed, tasks: tasksWithCompletion };
+    }
+    return {
+      selectedProjectId: undefined,
+      projects: [],
+      tasks: [],
+    };
   });
 
   // Dark Mode State (wird im localStorage persistiert)
@@ -39,17 +56,43 @@ function App() {
     localStorage.setItem("projectState", JSON.stringify(projectState));
   }, [projectState]);
 
+  // Erinnerungen für Projekte, die bald fällig sind
+  useEffect(() => {
+    requestNotificationPermission();
+    checkDueReminders(projectState.projects);
+    const interval = setInterval(() => {
+      checkDueReminders(projectState.projects);
+    }, 60 * 60 * 1000); // stündliche Prüfung
+    return () => clearInterval(interval);
+  }, [projectState.projects]);
+
+  // Erinnerungen für Aufgaben, die bald fällig sind
+  useEffect(() => {
+    requestNotificationPermission();
+    checkTaskDeadlines(projectState.tasks);
+    const interval = setInterval(() => {
+      checkTaskDeadlines(projectState.tasks);
+    }, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [projectState.tasks]);
+
   // State für das zuletzt erstellte Projekt, das evtl. in den Kalender importiert werden soll
   const [calendarProject, setCalendarProject] = useState(null);
   const calendarModalRef = useRef();
 
-  function handleAddTask(text) {
+  function handleAddTask(text, dueDate) {
     setProjectState((prevState) => {
       const taskId = Math.random();
+      const project = prevState.projects.find(
+        (p) => p.id === prevState.selectedProjectId
+      );
+      const defaultDate = project?.dueDate || "";
       const newTask = {
         text: text,
         projectId: prevState.selectedProjectId,
         id: taskId,
+        completed: false,
+        dueDate: dueDate || defaultDate,
       };
 
       return {
@@ -71,6 +114,15 @@ function App() {
       ...prevState,
       tasks: prevState.tasks.map((task) =>
         task.id === id ? { ...task, text: newText } : task
+      ),
+    }));
+  }
+
+  function handleToggleTaskCompletion(id) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      tasks: prevState.tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
       ),
     }));
   }
@@ -120,6 +172,9 @@ function App() {
       selectedProjectId: undefined,
       projects: prevState.projects.filter(
         (project) => project.id !== prevState.selectedProjectId
+      ),
+      tasks: prevState.tasks.filter(
+        (task) => task.projectId !== prevState.selectedProjectId
       ),
     }));
   }
@@ -178,6 +233,7 @@ function App() {
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
       onEditTask={handleEditTask}
+      onToggleTaskCompletion={handleToggleTaskCompletion}
       tasks={tasksForSelectedProject}
     />
   );
