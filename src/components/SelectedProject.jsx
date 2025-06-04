@@ -9,6 +9,7 @@ function SelectedProject({
   onAddTask,
   onDeleteTask,
   onEditTask,
+  onToggleTaskCompletion,
   onRename,
 }) {
   const [showTasks, setShowTasks] = useState(false);
@@ -109,6 +110,7 @@ function SelectedProject({
           onAdd={onAddTask}
           onDelete={onDeleteTask}
           onEdit={onEditTask}
+          onToggleCompletion={onToggleTaskCompletion}
           tasks={tasks}
         />
       </div>
