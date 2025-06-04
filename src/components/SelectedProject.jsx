@@ -69,7 +69,7 @@ function SelectedProject({
         confirmText="Löschen"
         cancelText="Abbrechen"
         onConfirm={() => {
-          onDelete();
+          onDelete(project.id);
         }}
         onCancel={() => {}}
       />
