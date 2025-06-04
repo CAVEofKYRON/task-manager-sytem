@@ -10,13 +10,20 @@ function App() {
   // Initialisierung des projectState aus localStorage (falls vorhanden)
   const [projectState, setProjectState] = useState(() => {
     const storedState = localStorage.getItem("projectState");
-    return storedState
-      ? JSON.parse(storedState)
-      : {
-          selectedProjectId: undefined,
-          projects: [],
-          tasks: [],
-        };
+    if (storedState) {
+      const parsed = JSON.parse(storedState);
+      const tasksWithCompletion = (parsed.tasks || []).map((task) =>
+        Object.prototype.hasOwnProperty.call(task, "completed")
+          ? task
+          : { ...task, completed: false }
+      );
+      return { ...parsed, tasks: tasksWithCompletion };
+    }
+    return {
+      selectedProjectId: undefined,
+      projects: [],
+      tasks: [],
+    };
   });
 
   // Dark Mode State (wird im localStorage persistiert)
@@ -50,6 +57,7 @@ function App() {
         text: text,
         projectId: prevState.selectedProjectId,
         id: taskId,
+        completed: false,
       };
 
       return {
@@ -71,6 +79,15 @@ function App() {
       ...prevState,
       tasks: prevState.tasks.map((task) =>
         task.id === id ? { ...task, text: newText } : task
+      ),
+    }));
+  }
+
+  function handleToggleTaskCompletion(id) {
+    setProjectState((prevState) => ({
+      ...prevState,
+      tasks: prevState.tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
       ),
     }));
   }
@@ -178,6 +195,7 @@ function App() {
       onAddTask={handleAddTask}
       onDeleteTask={handleDeleteTask}
       onEditTask={handleEditTask}
+      onToggleTaskCompletion={handleToggleTaskCompletion}
       tasks={tasksForSelectedProject}
     />
   );
