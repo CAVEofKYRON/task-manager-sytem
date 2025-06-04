@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import NewTask from "./NewTask";
 import ConfirmationModal from "./ConfirmationModal";
 
-function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion }) {
+function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion, projectDueDate }) {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [editedText, setEditedText] = useState("");
@@ -38,7 +38,7 @@ function Tasks({ tasks, onAdd, onDelete, onEdit, onToggleCompletion }) {
       <h2 className="text-2xl font-bold text-stone-700 mb-4 dark:text-stone-300">
         Aufgaben
       </h2>
-      <NewTask onAdd={onAdd} />
+      <NewTask onAdd={onAdd} projectDueDate={projectDueDate} />
 
       {tasks.length > 0 && (
         <div className="flex gap-2 mt-4">
